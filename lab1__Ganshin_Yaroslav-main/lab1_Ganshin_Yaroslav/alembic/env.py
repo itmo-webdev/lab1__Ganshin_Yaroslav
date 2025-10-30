@@ -18,9 +18,9 @@ fileConfig(config.config_file_name)
 
 
 try:
-    from main import Base  
+    from app.models import Base  
 except Exception as e:
-    raise RuntimeError("Не удалось импортировать Base из main.py: " + str(e))
+    raise RuntimeError("Не удалось импортировать Base из app.models: " + str(e))
 
 target_metadata = Base.metadata
 
