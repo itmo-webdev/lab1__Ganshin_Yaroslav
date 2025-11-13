@@ -29,6 +29,16 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     DATABASE_URL = config.get_main_option("sqlalchemy.url")
 
+# Alembic must use a SYNC driver. Normalize URL accordingly.
+lower_url = (DATABASE_URL or "").lower()
+if lower_url.startswith("postgres://"):
+    DATABASE_URL = "postgresql://" + DATABASE_URL.split("://", 1)[1]
+if "+asyncpg" in lower_url:
+    DATABASE_URL = DATABASE_URL.replace("+asyncpg", "+psycopg2")
+elif lower_url.startswith("postgresql://") and "+" not in lower_url:
+    # no explicit driver -> psycopg2 by default
+    pass
+
 def run_migrations_offline():
     context.configure(
         url=DATABASE_URL,

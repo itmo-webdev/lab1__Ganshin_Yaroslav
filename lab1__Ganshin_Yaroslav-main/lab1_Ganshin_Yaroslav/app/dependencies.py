@@ -7,8 +7,10 @@ from sqlalchemy import select
 from .db import get_db
 from .models import User, News, Comment
 from .security import decode_access_token
+from .cache import get_json, set_json
 
 auth_scheme = HTTPBearer()
+_USER_TTL_SECONDS = 600
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme), db: AsyncSession = Depends(get_db)) -> User:
     token = credentials.credentials
@@ -17,10 +19,38 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(a
     except Exception:
         raise HTTPException(status_code=401, detail="Token invalid or expired")
     user_id = int(payload.get("sub"))
+
+    cached = await get_json(f"user:{user_id}")
+    if cached:
+
+        user = User(
+            id=cached["id"],
+            name=cached["name"],
+            email=cached["email"],
+            registered_at=cached["registered_at"],
+            is_verified_author=cached["is_verified_author"],
+            avatar=cached.get("avatar"),
+            role=cached["role"],
+        )
+        return user
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+
+    await set_json(
+        f"user:{user.id}",
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "registered_at": user.registered_at.isoformat(),
+            "is_verified_author": user.is_verified_author,
+            "avatar": user.avatar,
+            "role": user.role,
+        },
+        ttl_seconds=_USER_TTL_SECONDS,
+    )
     return user
 
 def require_role(min_role: str):
