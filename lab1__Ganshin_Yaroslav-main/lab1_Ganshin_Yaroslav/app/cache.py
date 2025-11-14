@@ -4,9 +4,7 @@ from typing import Any, List, Optional
 from dotenv import load_dotenv
 import redis.asyncio as redis
 import logging
-
 load_dotenv()
-
 _redis: Optional[redis.Redis] = None
 logger = logging.getLogger("cache")
 

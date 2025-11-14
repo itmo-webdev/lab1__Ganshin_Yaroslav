@@ -9,6 +9,7 @@ from ..models import News, User
 from ..schemas import NewsCreate, NewsUpdate, NewsOut
 from ..dependencies import get_current_user, require_verified_author, resolve_news_and_check_editable
 from ..cache import get_json, set_json, delete as cache_delete, delete_by_prefix
+from ..celery_app import app as celery_app
 
 router = APIRouter(prefix="/news", tags=["news"])
 _NEWS_TTL = 300
@@ -22,6 +23,11 @@ async def create_news(news_in: NewsCreate, db: AsyncSession = Depends(get_db), c
 
     await cache_delete(f"news:{news.id}")
     await delete_by_prefix("news:list:")
+    celery_app.send_task(
+        "lab1_Ganshin_Yaroslav.app.tasks.email.notify_new_news",
+        args=[news.id],
+        queue="email",
+    )
     return news
 
 @router.get("/{news_id}", response_model=NewsOut)

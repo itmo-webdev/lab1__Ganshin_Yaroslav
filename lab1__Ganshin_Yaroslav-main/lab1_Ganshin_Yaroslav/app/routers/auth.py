@@ -71,9 +71,7 @@ async def refresh_token(data: RefreshIn, request: Request, db: AsyncSession = De
     if not rs:
         raise HTTPException(status_code=400, detail="Refresh token invalid")
     user = await db.get(User, int(rs["user_id"]))
-    # revoke old
     await _revoke_refresh_session(data.refresh_token)
-    # issue new
     new_refresh = await _create_refresh_session(user, request.headers.get("user-agent", "unknown"))
     access = create_access_token(user.id, user.role)
     return {"access_token": access, "refresh_token": new_refresh, "token_type": "bearer"}
