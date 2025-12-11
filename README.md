@@ -1,4 +1,4 @@
-
+<img width="218" height="179" alt="image" src="https://github.com/user-attachments/assets/0635a1f0-abc9-45f9-b92c-912f04a4d86e" />
 # Новостной API (FastAPI)
 
 ## О проекте
@@ -21,7 +21,7 @@ app/
 ├── schemas.py       # Pydantic схемы
 ├── security.py      # JWT и безопасность
 └── tasks/           # Асинхронные задачи Celery
-    └── email.py     # Отправка email****
+    └── email.py     # Отправка email
 
 
 ## Основные технологии
@@ -79,3 +79,6 @@ app/
 ### Установка зависимостей
 ```bash
 pip install -r requirements.txt
+
+
+
