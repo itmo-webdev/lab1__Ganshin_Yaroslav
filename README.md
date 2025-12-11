@@ -64,7 +64,7 @@
 
 
 ### Установка зависимостей
-```bash
+bash
 pip install -r requirements.txt
 
 
@@ -73,4 +73,6 @@ pip install -r requirements.txt
 
 Аутентификация через Гитхаб:
   <img width="218" height="179" alt="image" src="https://github.com/user-attachments/assets/69e4f8e9-b7c4-48e2-b06f-273a9e059f3a" />
+
+
 
