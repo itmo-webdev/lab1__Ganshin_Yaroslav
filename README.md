@@ -55,10 +55,22 @@
    - `REDIS_URL` - URL для подключения к Redis
    - `CELERY_BROKER_URL` - URL для брокера сообщений Celery (по умолчанию используется Redis)
    - Настройки SMTP для отправки email
+  
+ 
+  Запуск через uvicorn app.main:app --reload 
+  
+  Можно использовать файл Докера... ( docker-compose.yml конкретно тут не используем, т.к. он для бек + фронт, тут нету папки с frontend, соотв., учитываем )
+
+
 
 ### Установка зависимостей
 ```bash
 pip install -r requirements.txt
 
 
+
+Приложение:
+
+Аутентификация через Гитхаб:
+  <img width="218" height="179" alt="image" src="https://github.com/user-attachments/assets/69e4f8e9-b7c4-48e2-b06f-273a9e059f3a" />
 
