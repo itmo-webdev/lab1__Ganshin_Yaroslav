@@ -4,26 +4,6 @@
 ## О проекте
 Современный асинхронный API для управления новостями с системой аутентификации и авторизации. Проект использует FastAPI, SQLAlchemy, Celery и Redis.
 
-app/
-├── __init__.py
-├── cache.py         # Асинхронный кеш Redis
-├── celery_app.py    # Конфигурация Celery
-├── db.py            # Настройка асинхронной БД
-├── dependencies.py  # Асинхронные зависимости
-├── main.py          # Точка входа (FastAPI приложение)
-├── models.py        # SQLAlchemy модели
-├── routers/         # Асинхронные роутеры API
-│   ├── __init__.py
-│   ├── auth.py      # Аутентификация
-│   ├── comments.py  # Комментарии
-│   ├── news.py      # Новости
-│   └── users.py     # Пользователи
-├── schemas.py       # Pydantic схемы
-├── security.py      # JWT и безопасность
-└── tasks/           # Асинхронные задачи Celery
-    └── email.py     # Отправка email
-
-
 ## Основные технологии
 
 ### Асинхронность
