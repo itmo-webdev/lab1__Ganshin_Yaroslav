@@ -26,7 +26,7 @@
 
 
 
-Теперь быстро протестирую функционал:
+Теперь быстро протестирую функционал (уточню, что тестирование происходило на разных этапах реализации проекта, соотв., изображения финального интерфейса проекта находятся в конце readme.md ):
 
 
 Необходимо закрыть все ручки
@@ -109,6 +109,23 @@
 <img width="1019" height="643" alt="image" src="https://github.com/user-attachments/assets/33571aa8-2842-417e-a772-38e773252b22" />
 
 <img width="1076" height="516" alt="image" src="https://github.com/user-attachments/assets/f5b086b5-8bc9-4ece-8038-0ab1c94eaac4" />
+
+
+Последние изображения интерфейса:
+
+<img width="1635" height="906" alt="image" src="https://github.com/user-attachments/assets/ce9342ad-39b9-4e59-8a52-fe6bfbf4f931" />
+
+<img width="1671" height="888" alt="image" src="https://github.com/user-attachments/assets/758b940d-b5b3-4a31-bcc5-c2a843f9589f" />
+
+<img width="1678" height="508" alt="image" src="https://github.com/user-attachments/assets/bdcb793f-fc1c-4dee-837c-addba14aba2a" />
+
+<img width="1886" height="904" alt="image" src="https://github.com/user-attachments/assets/9b22af59-3048-4478-b837-4e4884b210a9" />
+
+<img width="830" height="833" alt="image" src="https://github.com/user-attachments/assets/7eb3e000-2642-4100-9892-2dc8782cc016" />
+
+
+
+
 
 <img width="1044" height="557" alt="image" src="https://github.com/user-attachments/assets/e63234f6-df6b-4008-9a3d-a3c05060da40" />
 <img width="1028" height="585" alt="image" src="https://github.com/user-attachments/assets/5094d9b0-d516-4bba-99f9-9f0599521f33" />
