@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -10,7 +10,7 @@ from ..dependencies import get_current_user, resolve_comment_and_check_owner
 router = APIRouter(prefix="/comments", tags=["comments"])
 
 @router.post("/", response_model=CommentOut, status_code=status.HTTP_201_CREATED)
-async def create_comment(news_id: int, comment_in: CommentCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def create_comment(comment_in: CommentCreate, news_id: int = Query(...), db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     news_res = await db.execute(select(News).where(News.id == news_id))
     news = news_res.scalar_one_or_none()
     if not news:
@@ -45,6 +45,7 @@ async def delete_comment(comment_id: int, db: AsyncSession = Depends(get_db), c:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 from typing import List
+
 from sqlalchemy.orm import selectinload
 
 @router.get("/", response_model=List[CommentOut])

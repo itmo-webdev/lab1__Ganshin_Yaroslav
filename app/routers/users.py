@@ -8,9 +8,15 @@ from ..models import User, UserRole
 from ..schemas import UserCreate, UserOut
 from ..dependencies import get_current_user, require_role
 from ..security import hash_password
+from ..cache import get_json, set_json, delete
+
+USER_CACHE_TTL = 60 * 5
+
+import logging
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+logger = logging.getLogger(__name__)
 @router.post("/", response_model=UserOut)
 async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_db), _: User = Depends(require_role(UserRole.ADMIN))):
     result = await db.execute(select(User).where(User.email == user_in.email))
@@ -29,13 +35,22 @@ async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_db), _
         await db.rollback()
         raise HTTPException(status_code=400, detail="Could not create user")
     await db.refresh(user)
+    await delete(f"user:{user.id}")
     return user
 
 @router.get("/{user_id}", response_model=UserOut)
 async def read_user(user_id: int, db: AsyncSession = Depends(get_db), _: User = Depends(get_current_user)):
+    cache_key = f"user:{user_id}"
+    cached_user = await get_json(cache_key)
+    if cached_user:
+        logger.info(f"User {user_id} retrieved from cache.")
+        return cached_user
+
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    logger.info(f"User {user_id} retrieved from DB and cached.")
+    await set_json(cache_key, UserOut.from_orm(user).dict(), USER_CACHE_TTL)
     return user
 
 @router.get("/", response_model=List[UserOut])
@@ -56,6 +71,7 @@ async def update_user(user_id: int, user_in: UserCreate, db: AsyncSession = Depe
         user.password_hash = hash_password(password)
     await db.commit()
     await db.refresh(user)
+    await delete(f"user:{user_id}")
     return user
 
 @router.delete("/{user_id}")
@@ -65,4 +81,5 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), _: User 
         raise HTTPException(status_code=404, detail="User not found")
     await db.delete(user)
     await db.commit()
+    await delete(f"user:{user_id}")
     return {"status": "deleted"}

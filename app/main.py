@@ -46,11 +46,11 @@ def create_app() -> FastAPI:
     
     # Включаем роутеры
     try:
-        app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+        app.include_router(auth.router, prefix="/api", tags=["auth"])
         app.include_router(users.router, prefix="/api/users", tags=["users"])
-        app.include_router(news.router, prefix="/api/news", tags=["news"])
-        app.include_router(comments.router, prefix="/api/comments", tags=["comments"])
-        app.include_router(oauth_github.router, prefix="/api/auth/github", tags=["oauth"])
+        app.include_router(news.router, prefix="/api", tags=["news"])
+        app.include_router(comments.router, prefix="/api", tags=["comments"])
+        app.include_router(oauth_github.router, prefix="/api", tags=["oauth"])
     except Exception as e:
         logger.error(f"Failed to include routers: {e}")
         raise
@@ -114,13 +114,17 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # Пропускаем публичные маршруты
         public_paths = [
             "/", "/health", "/api/docs", "/api/openapi.json", "/api/redoc",
             "/api/auth/login", "/api/auth/register", "/api/auth/refresh",
-            "/api/auth/github", "/api/auth/github/callback",
+            "/api/auth/github", "/api/auth/github/", "/api/auth/github/callback",
             "/api/news", "/api/news/", "/api/news/{news_id}",
-            "/api/comments/news/{news_id}"
+            "/api/comments", "/api/comments/news/{news_id}",
+            "/api/users"
         ]
         
         if any(request.url.path.startswith(path.replace("{news_id}", "").rstrip("/")) 

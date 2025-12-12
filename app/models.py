@@ -26,7 +26,7 @@ class User(Base):
 
     news = relationship("News", back_populates="author", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
-    refresh_sessions = relationship("RefreshSession", back_populates="user", cascade="all, delete-orphan")
+
 
 class News(Base):
     __tablename__ = "news"
@@ -52,12 +52,3 @@ class Comment(Base):
     news = relationship("News", back_populates="comments")
     author = relationship("User", back_populates="comments")
 
-class RefreshSession(Base):
-    __tablename__ = "refresh_sessions"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    token: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
-    user_agent: Mapped[str | None] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-
-    user = relationship("User", back_populates="refresh_sessions")
