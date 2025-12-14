@@ -142,6 +142,8 @@
 
 <img width="1671" height="888" alt="image" src="https://github.com/user-attachments/assets/758b940d-b5b3-4a31-bcc5-c2a843f9589f" />
 
+Это информация из 'ручки", проверяющей работу составных частей приложения ( его сервисов, бд. Соотв. healthy = все хорошо, до сервиса достучались, он ответил... )
+<img width="1244" height="206" alt="image" src="https://github.com/user-attachments/assets/edb2d317-2c42-446b-9fa3-656e5fc97a64" />
 
 Логи работы воркера ( как раз был конец недели, все успешно сработало )
 <img width="1305" height="358" alt="image" src="https://github.com/user-attachments/assets/ee05aeca-8f86-4d37-995e-8a612d0cc840" />
