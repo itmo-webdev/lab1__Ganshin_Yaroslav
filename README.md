@@ -153,3 +153,5 @@
 
 <img width="830" height="833" alt="image" src="https://github.com/user-attachments/assets/7eb3e000-2642-4100-9892-2dc8782cc016" />
 
+Фотки контейнеров в докере ( уточню, что postgresql поднчт локально  ( host.docker.internal ) )
+<img width="1089" height="379" alt="image" src="https://github.com/user-attachments/assets/6d92ea7d-1c9c-4a61-b694-63b1d348b07b" />
