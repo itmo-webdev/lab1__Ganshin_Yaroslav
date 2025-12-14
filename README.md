@@ -142,6 +142,11 @@
 
 <img width="1671" height="888" alt="image" src="https://github.com/user-attachments/assets/758b940d-b5b3-4a31-bcc5-c2a843f9589f" />
 
+
+Логи работы воркера ( как раз был конец недели, все успешно сработало )
+<img width="1305" height="358" alt="image" src="https://github.com/user-attachments/assets/ee05aeca-8f86-4d37-995e-8a612d0cc840" />
+
+
 <img width="1678" height="508" alt="image" src="https://github.com/user-attachments/assets/bdcb793f-fc1c-4dee-837c-addba14aba2a" />
 
 <img width="1886" height="904" alt="image" src="https://github.com/user-attachments/assets/9b22af59-3048-4478-b837-4e4884b210a9" />
