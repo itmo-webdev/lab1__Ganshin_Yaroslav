@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
+import logging
 
 from ..db import get_db
 from ..models import User
@@ -12,7 +13,12 @@ from ..cache import set_json, get_json, delete as cache_delete, sadd, srem, smem
 from datetime import datetime
 import uuid
 
+# метрика
+from app.metrics import USERS_REGISTERED
+
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+logger = logging.getLogger(__name__)
 
 _RS_TTL = REFRESH_TOKEN_EXPIRE_MINUTES * 60
 
@@ -40,16 +46,21 @@ async def register(data: RegisterIn, db: AsyncSession = Depends(get_db)):
     result = await db.execute(exists_q)
     existing = result.scalar_one_or_none()
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        logger.warning(f"Registration attempt with existing email: {data.email}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
     hashed = hash_password(data.password)
     user = User(name=data.name, email=data.email, password_hash=hashed, is_verified_author=False)
     db.add(user)
     try:
         await db.commit()
-    except Exception:
+        await db.refresh(user)
+        logger.info(f"User registered successfully: {user.email} (ID: {user.id})")
+        # метрика
+        USERS_REGISTERED.inc()
+    except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=400, detail="Could not create user")
-    await db.refresh(user)
+        logger.error(f"Failed to register user {data.email}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not create user")
     return user
 
 @router.post("/login", response_model=TokenOut)

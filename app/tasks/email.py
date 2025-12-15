@@ -14,6 +14,8 @@ from logging.handlers import RotatingFileHandler
 
 from app.models import User, News
 
+# метрики
+from app.metrics import NEWS_NOTIFICATIONS_SENT
 
 def _ensure_log_dir(path: str) -> None:
     d = os.path.dirname(path)
@@ -105,6 +107,8 @@ def notify_new_news(self, news_id: int) -> None:
                 "published_at": news.published_at.isoformat(),
             }
             _logger.info("send_mock %s", json.dumps(payload, ensure_ascii=False))
+            # Метрика - НОВАЯ СТРОКА
+            NEWS_NOTIFICATIONS_SENT.inc()
     finally:
         session.close()
 

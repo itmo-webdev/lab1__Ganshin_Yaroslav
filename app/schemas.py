@@ -1,5 +1,6 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+import re
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, Any, List
 
 class UserCreate(BaseModel):
@@ -83,12 +84,38 @@ class TokenOut(BaseModel):
 
 class RegisterIn(BaseModel):
     name: str
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(..., min_length=3, max_length=32)
+    password: str = Field(..., min_length=8)
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_complexity(cls, v: str) -> str:
+        if not re.search(r"[a-z]", v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r"[A-Z]", v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r"\d", v):
+            raise ValueError('Password must contain at least one digit')
+        if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]", v):
+            raise ValueError('Password must contain at least one special character')
+        return v
 
 class LoginIn(BaseModel):
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(..., min_length=3, max_length=32)
+    password: str = Field(..., min_length=8)
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_complexity(cls, v: str) -> str:
+        if not re.search(r"[a-z]", v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r"[A-Z]", v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r"\d", v):
+            raise ValueError('Password must contain at least one digit')
+        if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]", v):
+            raise ValueError('Password must contain at least one special character')
+        return v
 
 class RefreshIn(BaseModel):
     refresh_token: str

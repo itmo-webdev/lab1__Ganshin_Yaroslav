@@ -11,6 +11,8 @@ from ..schemas import NewsCreate, NewsUpdate, NewsOut
 from ..dependencies import get_current_user, require_verified_author, resolve_news_and_check_editable
 from ..cache import get_json, set_json, delete as cache_delete, delete_by_prefix
 from ..celery_app import app as celery_app
+# метрики
+from app.metrics import NEWS_CREATED
 
 router = APIRouter(prefix="/news", tags=["news"])
 _logger = logging.getLogger("news_router")
@@ -22,7 +24,9 @@ async def create_news(news_in: NewsCreate, db: AsyncSession = Depends(get_db), c
     db.add(news)
     await db.commit()
     await db.refresh(news)
-
+    #метрика 
+    NEWS_CREATED.inc()
+    
     await cache_delete(f"news:{news.id}")
     await delete_by_prefix("news:list:")
     celery_app.send_task(

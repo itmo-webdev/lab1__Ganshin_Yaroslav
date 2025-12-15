@@ -9,14 +9,21 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from datetime import datetime
+# Метрики
+from prometheus_fastapi_instrumentator import Instrumentator
 
-# Логирование
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+from app.hawk_config import hawk_client
 
+# новое логгирование
+from app.logging_config import setup_hybrid_logging
+import structlog
+
+
+
+
+logger = setup_hybrid_logging()
+#старый логер, пока не удаляю, чтобы не ломать старый код
+legacy_logger = logging.getLogger(__name__)
 # Импорт модулей
 try:
     from .security import decode_access_token
@@ -58,7 +65,8 @@ def create_app() -> FastAPI:
     return app
 
 app = create_app()
-
+#метрики
+instrumentator = Instrumentator().instrument(app)
 def setup_middleware(app: FastAPI) -> None:
     # Миддлвеар
     origins = [
@@ -82,33 +90,44 @@ def setup_middleware(app: FastAPI) -> None:
 setup_middleware(app)
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         import time
         start_time = time.time()
         
-        # Логируем входящий запрос
-        logger.info(f"Incoming request: {request.method} {request.url.path}")
+        #  structlog для новых JSON логов ( еще раз - у меня осталось старое логирование, к нему я добавил новое)
+        logger.info(
+            "incoming_request",
+            method=request.method,
+            path=request.url.path,
+            ip=request.client.host if request.client else None
+        )
+        
+        # старый лог для совместимости
+        legacy_logger.info(f"Incoming request: {request.method} {request.url.path}")
         
         try:
             response = await call_next(request)
-            
-            # Добавляем время обработки
             process_time = time.time() - start_time
-            response.headers["X-Process-Time"] = str(process_time)
             
-            # Логируем ответ
-            logger.info(f"Response: {response.status_code} - {process_time:.3f}s")
+            # JSON логи
+            logger.info(
+                "response",
+                status_code=response.status_code,
+                process_time=process_time,
+                method=request.method,
+                path=request.url.path
+            )
+            
+            # Старые логи
+            legacy_logger.info(f"Response: {response.status_code} - {process_time:.3f}s")
             
             return response
             
         except Exception as e:
-            logger.error(f"Unhandled exception: {e}", exc_info=True)
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"detail": "Internal server error"},
-            )
+            # Оба типа логов
+            logger.error("unhandled_exception", exception=str(e), exc_info=True)
+            legacy_logger.error(f"Unhandled exception: {e}", exc_info=True)
+            return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(
@@ -124,7 +143,11 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             "/api/auth/github", "/api/auth/github/", "/api/auth/github/callback",
             "/api/news", "/api/news/", "/api/news/{news_id}",
             "/api/comments", "/api/comments/news/{news_id}",
-            "/api/users"
+            "/api/users", "/metrics",
+            "/test-hawk-error",
+            "/test-hawk-error",
+            "/favicon.ico",
+            "/.well-known"
         ]
         
         if any(request.url.path.startswith(path.replace("{news_id}", "").rstrip("/")) 
@@ -172,7 +195,8 @@ async def startup_event():
     if not os.path.exists(logs_dir):
         os.makedirs(logs_dir)
         logger.info(f"Created logs directory: {logs_dir}")
-    
+    #метрики
+    instrumentator.expose(app)
     # Создаем таблицы в базе данных
     try:
         async with engine.begin() as conn:
@@ -222,7 +246,7 @@ async def health_check():
         health_status["components"]["database"] = "unhealthy"
         health_status["status"] = "degraded"
     
-    # Проверка RРедиса
+    # Проверка редиса
     try:
         from .config import REDIS_URL
         redis_client = Redis.from_url(REDIS_URL)
@@ -253,8 +277,8 @@ async def health_check():
 @app.get("/api/admin/ping")
 async def admin_ping(current_user = Depends(get_current_user)):
     """Проверка доступа админа"""
-    from ..models import UserRole
-    from ..dependencies import require_role
+    from app.models import UserRole
+    from app.dependencies import require_role
     
     # Проверяем роль через dependency
     admin_check = require_role(UserRole.ADMIN)
@@ -277,10 +301,36 @@ async def github_login_redirect():
     return RedirectResponse(url="/api/auth/github")
 
 # Обработчик ошибок
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    """Обработчик HTTP исключений"""
-    logger.warning(f"HTTP error {exc.status_code}: {exc.detail}")
+    """Обработчик HTTP исключений В JSON + Hawk"""
+    
+    # Логируем
+    logger.warning(
+        "http_error",
+        status_code=exc.status_code,
+        detail=exc.detail,
+        path=request.url.path,
+        method=request.method
+    )
+    legacy_logger.warning(f"HTTP error {exc.status_code}: {exc.detail}")
+    
+    # Отправляем в Hawk только серверные ошибки (5xx и т.п.)
+    if exc.status_code >= 500:
+        try:
+            hawk_client.send(
+                exc,
+                extra={
+                    "status_code": exc.status_code,
+                    "path": request.url.path,
+                    "method": request.method,
+                    "detail": exc.detail
+                }
+            )
+        except Exception as hawk_error:
+            logger.error("hawk_error", error=str(hawk_error))
+    
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
@@ -289,23 +339,64 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    """Обработчик общих исключений"""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    """Обработчик общих исключений В JSON + Hawk"""
+    
+    # Логируем
+    logger.error(
+        "unhandled_exception",
+        exception=str(exc),
+        exc_info=True,
+        path=request.url.path,
+        method=request.method
+    )
+    legacy_logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    
+    # Отправляем в Hawk
+    try:
+        hawk_client.send(
+            exc,
+            extra={
+                "path": request.url.path,
+                "method": request.method,
+                "request_url": str(request.url)
+            }
+        )
+    except Exception as hawk_error:
+        logger.error("hawk_error", error=str(hawk_error))
+    
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error"},
     )
 
+
+@app.get("/test-hawk-error")
+async def test_hawk_error():
+    """Тестовый эндпоинт для проверки Hawk (удалить после теста)"""
+    try:
+        # Генерируем ошибку
+        raise ValueError("Тестовая ошибка для Hawk мониторинга")
+    except Exception as e:
+        # Логируем и отправляем в Hawk
+        logger.error("test_hawk_error", error=str(e))
+        hawk_client.send(e, extra={"test": True})
+        # Возвращаем JSON-ответ вместо повторного вызова raise
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Тестовая ошибка отправлена в Hawk",
+                "error": str(e)
+            }
+        )
 # Опционально: добавим эндпоинт для получения конфигурации
 @app.get("/api/config")
 async def get_config():
     """Получение публичной конфигурации"""
-    from .config import (
+    from app.config import (
         GITHUB_CLIENT_ID,
         FRONTEND_URL,
         ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    
     return {
         "github_oauth_available": bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_ID != "your_github_client_id"),
         "frontend_url": FRONTEND_URL,
