@@ -136,7 +136,7 @@
 <img width="512" height="201" alt="image" src="https://github.com/user-attachments/assets/69181c0d-bf7b-4036-9e43-5fc52939cb34" />
 
 
-Последние изображения интерфейса:
+Изображения интерфейса:
 
 <img width="1635" height="906" alt="image" src="https://github.com/user-attachments/assets/ce9342ad-39b9-4e59-8a52-fe6bfbf4f931" />
 
@@ -157,3 +157,53 @@
 
 Фотки контейнеров в докере ( уточню, что postgresql поднчт локально  ( host.docker.internal ) )
 <img width="1089" height="379" alt="image" src="https://github.com/user-attachments/assets/6d92ea7d-1c9c-4a61-b694-63b1d348b07b" />
+
+
+
+
+Скрины проверки нового функционала для "Настройка метрик и логирования". Уточню, что делал отчет со скринами во writer(e), соотв., сюда прислал "скрины скринов" из
+writer. 
+Метрики
+<img width="790" height="606" alt="image" src="https://github.com/user-attachments/assets/01535100-c5a0-4a29-bdb3-f99dca8b2f56" />
+
+<img width="803" height="448" alt="image" src="https://github.com/user-attachments/assets/cf7cd86e-f9da-4657-ab55-8f89657b64eb" />
+
+<img width="816" height="365" alt="image" src="https://github.com/user-attachments/assets/e3c79c4a-6208-4917-a65f-35b335f1d935" />
+
+<img width="778" height="429" alt="image" src="https://github.com/user-attachments/assets/c62077e3-aa81-4353-b625-a716e3af801a" />
+
+<img width="774" height="395" alt="image" src="https://github.com/user-attachments/assets/c7d7b302-f2c1-43c1-af29-fd5c7604b811" />
+
+<img width="776" height="498" alt="image" src="https://github.com/user-attachments/assets/903b6313-863f-457d-b1c1-114caaaf0cd6" />
+
+<img width="788" height="263" alt="image" src="https://github.com/user-attachments/assets/7ac7e31f-0f73-4991-bd9f-d3d47ee7e3ff" />
+
+<img width="780" height="454" alt="image" src="https://github.com/user-attachments/assets/cd4554a1-6118-4cb0-8a42-334ce69e1a6a" />
+
+<img width="781" height="482" alt="image" src="https://github.com/user-attachments/assets/7f2ec324-ae60-4d5d-870c-42bf46afcef4" />
+
+<img width="812" height="746" alt="image" src="https://github.com/user-attachments/assets/be1b45c1-3114-4b35-9326-fe5f4aebb3b7" />
+
+<img width="792" height="209" alt="image" src="https://github.com/user-attachments/assets/b0a7684c-bc96-4bf7-b2dd-07f4151e4e87" />
+
+<img width="788" height="396" alt="image" src="https://github.com/user-attachments/assets/1cedc9e0-48e9-43b7-a1bb-1b46153e1e6f" />
+
+<img width="785" height="685" alt="image" src="https://github.com/user-attachments/assets/e8f61487-6859-4571-9fa7-71c0553bab2a" />
+
+<img width="830" height="745" alt="image" src="https://github.com/user-attachments/assets/072aeb17-e4d7-451f-87b3-4672a884b945" />
+
+<img width="810" height="671" alt="image" src="https://github.com/user-attachments/assets/26f57d5b-5e31-4c03-aea1-8c5724a4e137" />
+
+<img width="785" height="287" alt="image" src="https://github.com/user-attachments/assets/f660c43e-bfe3-4854-ab15-617fd5e6ce7a" />
+
+
+
+
+
+
+
+
+
+
+
+
