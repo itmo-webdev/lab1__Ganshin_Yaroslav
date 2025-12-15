@@ -1,5 +1,10 @@
 import os
 from dotenv import load_dotenv
+<<<<<<< HEAD
+=======
+
+load_dotenv() 
+>>>>>>> 035c268e2597b4667746047a83ef0fab8e2c2591
 
 load_dotenv() 
 
