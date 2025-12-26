@@ -402,3 +402,24 @@ async def get_config():
         "frontend_url": FRONTEND_URL,
         "access_token_expire_minutes": ACCESS_TOKEN_EXPIRE_MINUTES
     }
+    
+    
+@app.on_event("startup")
+async def startup_event():
+    """Создание таблиц при запуске."""
+    logger.info("Starting up...")
+    
+    # === ДОБАВИТЬ ЭТИ 3 СТРОКИ ===
+    if os.getenv("TESTING") == "1":
+        logger.info("Skipping DB table creation in TESTING mode")
+        return
+    # =============================
+    
+    # Создаем таблицы в базе данных
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.error(f"Failed to create database tables: {e}")
+        raise
