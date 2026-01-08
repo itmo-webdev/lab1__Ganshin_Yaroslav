@@ -109,6 +109,7 @@ app/
     └── email.py
 ```
 
+<img width="830" height="833" alt="image" src="https://github.com/user-attachments/assets/9246f9e4-112e-4f42-8062-3d173436c62c" />
 
 
 ## 📋 Выполнение технического задания
