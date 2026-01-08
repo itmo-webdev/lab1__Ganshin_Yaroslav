@@ -1,5 +1,10 @@
 # Модуль: Настройка авторизации через GitHub
+
+Что нужно было исправить?
+
 <img width="1262" height="232" alt="image" src="https://github.com/user-attachments/assets/b1bbb69f-0c69-44f9-bba9-d7ede860ca31" />
+
+
 
 
 
@@ -9,7 +14,7 @@
 **ИСПРАВЛЕНО:** Все обращения к БД переведены на асинхронный режим:
 - Используется `AsyncSession` из SQLAlchemy
 - Все функции в роутерах используют `async/await`
-- Пример корректного кода:
+- Конкретно (в качестве примера, я все прописывать не буду, чтобы не засорять описание ):
   ```python
   # Было бы синхронно (неправильно):
   # user = db.query(User).filter(User.id == user_id).first()
@@ -104,27 +109,6 @@ app/
     └── email.py
 ```
 
-## 📊 Ролевая модель (docs/auth.md)
-
-### Иерархия ролей:
-1. **USER** - базовые права:
-   - Чтение новостей и комментариев
-   - Создание комментариев
-   - Редактирование/удаление своих комментариев
-
-2. **AUTHOR** - все права USER +:
-   - Создание новостей (только при `is_verified_author=True`)
-   - Редактирование/удаление своих новостей
-
-3. **MODERATOR** - все права AUTHOR +:
-   - Редактирование/удаление любых новостей и комментариев
-
-4. **ADMIN** - все права MODERATOR +:
-   - Управление пользователями
-   - Изменение ролей и флагов пользователей
-
-
-
 
 
 ## 📋 Выполнение технического задания
@@ -180,53 +164,6 @@ app/
 - **Проверка владения**: Пользователь может редактировать только свои объекты (кроме админов и модераторов)
 - **Публичный доступ**: GET-запросы к новостям и комментариям доступны без авторизации
 
-## 🚀 Запуск приложения
-
-1. **Настройка окружения**:
-   ```bash
-   cp .env.example .env
-   # Заполните переменные в .env
-   ```
-
-2. **Запуск сервера**:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-3. **Запуск Celery**:
-   ```bash
-   celery -A app.celery_app.app worker --loglevel=info
-   celery -A app.celery_app.app beat --loglevel=info
-   ```
-
-## ✅ Проверка работы
-
-1. **Тестирование авторизации**:
-   ```bash
-   # Регистрация
-   curl -X POST http://localhost:8000/api/auth/register \
-     -H "Content-Type: application/json" \
-     -d '{"name":"test","email":"test@example.com","password":"Test123!"}'
-   
-   # Вход
-   curl -X POST http://localhost:8000/api/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"email":"test@example.com","password":"Test123!"}'
-   
-   # Создание новости (требует verified author)
-   curl -X POST http://localhost:8000/api/news \
-     -H "Authorization: Bearer YOUR_TOKEN" \
-     -H "Content-Type: application/json" \
-     -d '{"title":"Test","content":"Test content"}'
-   ```
-
-2. **GitHub OAuth**:
-   - Перейти по `/api/auth/github`
-   - Авторизоваться через GitHub
-   - Получить токены в callback
-
-## 📈 Дополнительные улучшения
-
 1. **Кеширование**:
    - Кеширование пользователей в Redis (TTL 10 мин)
    - Кеширование новостей (TTL 5 мин)
@@ -242,7 +179,7 @@ app/
    - Health check эндпоинт (`/health`)
    - Graceful shutdown
 
-Все требования технического задания выполнены, комментарии преподавателя учтены и исправлены. Код соответствует современным стандартам разработки на Python и FastAPI.
+
 
 
 
