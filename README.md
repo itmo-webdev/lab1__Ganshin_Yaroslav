@@ -1,3 +1,251 @@
+# Модуль: Настройка авторизации через GitHub
+<img width="1262" height="232" alt="image" src="https://github.com/user-attachments/assets/b1bbb69f-0c69-44f9-bba9-d7ede860ca31" />
+
+
+
+## 🔧 Исправление комментариев преподавателя
+
+### 1. **Асинхронность при обращении к БД**
+**ИСПРАВЛЕНО:** Все обращения к БД переведены на асинхронный режим:
+- Используется `AsyncSession` из SQLAlchemy
+- Все функции в роутерах используют `async/await`
+- Пример корректного кода:
+  ```python
+  # Было бы синхронно (неправильно):
+  # user = db.query(User).filter(User.id == user_id).first()
+  
+  # Стало асинхронно (правильно):
+  result = await db.execute(select(User).where(User.id == user_id))
+  user = result.scalar_one_or_none()
+  ```
+
+**Исключение:** Celery воркер (`email.py`) использует синхронный доступ, так как Celery не поддерживает async/await в задачах.
+
+### 2. **401 и 403 ошибки только в зависимостях**
+**ИСПРАВЛЕНО:** Все ошибки авторизации и доступа вынесены в зависимости:
+- **В `dependencies.py`** созданы:
+  - `UnauthorizedException` (401 ошибки)
+  - `ForbiddenException` (403 ошибки)
+- **Убраны из контроллеров** прямые вызовы `HTTPException(401/403)`
+- **В роутерах** используются зависимости для проверки прав:
+  ```python
+  # Пример из news.py - правильный подход
+  @router.post("/", response_model=NewsOut)
+  async def create_news(
+      news_in: NewsCreate,
+      db: AsyncSession = Depends(get_db),
+      current_user: User = Depends(require_verified_author)  # ← зависимость проверяет права
+  ):
+      # Без проверок прав в теле функции
+  ```
+
+### 3. **Реструктуризация проекта**
+**ИСПРАВЛЕНО:** Логика вынесена из main.py:
+- **Модели**: `models.py` - SQLAlchemy модели
+- **Схемы**: `schemas.py` - Pydantic схемы для валидации
+- **Роуты по сущностям**:
+  - `auth.py` - аутентификация
+  - `users.py` - управление пользователями
+  - `news.py` - новости
+  - `comments.py` - комментарии
+  - `oauth_github.py` - OAuth авторизация
+- **Бизнес-логика** в соответствующих роутерах
+- **Зависимости**: `dependencies.py` - система проверки прав
+- **Конфигурация**: `config.py`, `celery_app.py`, `cache.py`
+
+### 4. **Дополнительные исправления**
+- **`.env` в `.gitignore`**: Добавлено исключение конфиденциальных файлов
+- **Удалены ненужные архивы**: Репозиторий очищен от временных файлов
+- **Middleware** для глобальной проверки аутентификации в `main.py`
+
+## 🏗️ Структура проекта после рефакторинга
+
+```
+app/
+
+├── main.py              # Точка входа, middleware, конфигурация приложения
+
+├── models.py           # SQLAlchemy модели (User, News, Comment)
+
+├── schemas.py          # Pydantic схемы для валидации
+
+├── dependencies.py     # Зависимости для проверки прав (401/403 ошибки)
+
+├── security.py         # JWT, хэширование паролей
+
+├── cache.py           # Redis кеширование
+
+├── db.py              # Настройка асинхронной БД
+
+├── config.py          # Конфигурация приложения
+
+├── celery_app.py      # Конфигурация Celery
+
+├── metrics.py         # Prometheus метрики
+
+├── logging_config.py  # Настройка структурированного логгирования
+
+├── hawk_config.py     # Интеграция с мониторингом Hawk
+
+├── routers/           # Роуты по сущностям
+
+│   ├── auth.py
+
+│   ├── users.py
+
+│   ├── news.py
+
+│   ├── comments.py
+
+│   └── oauth_github.py
+
+└── tasks/             # Celery задачи
+
+    └── email.py
+```
+
+## 📊 Ролевая модель (docs/auth.md)
+
+### Иерархия ролей:
+1. **USER** - базовые права:
+   - Чтение новостей и комментариев
+   - Создание комментариев
+   - Редактирование/удаление своих комментариев
+
+2. **AUTHOR** - все права USER +:
+   - Создание новостей (только при `is_verified_author=True`)
+   - Редактирование/удаление своих новостей
+
+3. **MODERATOR** - все права AUTHOR +:
+   - Редактирование/удаление любых новостей и комментариев
+
+4. **ADMIN** - все права MODERATOR +:
+   - Управление пользователями
+   - Изменение ролей и флагов пользователей
+
+
+
+
+
+## 📋 Выполнение технического задания
+
+### ✅ Все функциональные требования реализованы:
+
+#### 1. **Авторизация через GitHub OAuth**
+- Реализована в модуле `oauth_github.py`
+- Используется библиотека `fastapi_sso`
+- Роуты: `/api/auth/github` и `/api/auth/github/callback`
+- При успешной авторизации генерируются JWT и refresh токены
+- Пользователи без аккаунта автоматически регистрируются
+
+#### 2. **Ролевая модель с проверкой прав**
+- Модели ролей в `models.py`: `ADMIN`, `MODERATOR`, `AUTHOR`, `USER`
+- Зависимости для проверки ролей в `dependencies.py`:
+  - `require_role()` - универсальная проверка
+  - `require_admin`, `require_moderator`, `require_author`, `require_user` - конкретные роли
+  - `require_verified_author` - проверка флага верификации автора
+
+#### 3. **Резолверы для проверки прав на объекты**
+- `resolve_news_and_check_editable()` - проверяет права на редактирование новости
+- `resolve_comment_and_check_owner()` - проверяет права на редактирование комментария
+- Логика проверки вынесена из контроллеров в зависимости
+
+#### 4. **JWT и refresh токены с user agent**
+- `security.py`: Генерация и валидация JWT токенов
+- `auth.py`: Система refresh сессий с хранением в Redis
+- User agent сохраняется в каждой сессии
+- Ручка `GET /api/auth/sessions` для просмотра активных сессий
+
+#### 5. **Все необходимые операции с токенами**
+- `POST /api/auth/refresh` - обновление токенов
+- `POST /api/auth/logout` - выход из системы
+- `POST /api/auth/login` - вход по логину/паролю
+- `POST /api/auth/register` - регистрация
+
+#### 6. **Хэширование паролей**
+- Используется `argon2` для безопасного хэширования
+- Функции `hash_password()` и `verify_password()` в `security.py`
+
+### ✅ Нефункциональные требования выполнены:
+
+- **Python 3.10+**: Код совместим с указанной версией
+- **Библиотеки**: Используются FastAPI, SQLAlchemy, fastapi_sso, argon2
+- **PostgreSQL**: Асинхронный драйвер `asyncpg`
+- **Корректный запуск**: Приложение стартует без ошибок
+- **.env конфигурация**: Пример файла `.env.example` с настройками GitHub OAuth
+
+
+### Особенности:
+- **Флаг `is_verified_author`**: Даже при роли AUTHOR без этого флага нельзя создавать новости
+- **Проверка владения**: Пользователь может редактировать только свои объекты (кроме админов и модераторов)
+- **Публичный доступ**: GET-запросы к новостям и комментариям доступны без авторизации
+
+## 🚀 Запуск приложения
+
+1. **Настройка окружения**:
+   ```bash
+   cp .env.example .env
+   # Заполните переменные в .env
+   ```
+
+2. **Запуск сервера**:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+3. **Запуск Celery**:
+   ```bash
+   celery -A app.celery_app.app worker --loglevel=info
+   celery -A app.celery_app.app beat --loglevel=info
+   ```
+
+## ✅ Проверка работы
+
+1. **Тестирование авторизации**:
+   ```bash
+   # Регистрация
+   curl -X POST http://localhost:8000/api/auth/register \
+     -H "Content-Type: application/json" \
+     -d '{"name":"test","email":"test@example.com","password":"Test123!"}'
+   
+   # Вход
+   curl -X POST http://localhost:8000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@example.com","password":"Test123!"}'
+   
+   # Создание новости (требует verified author)
+   curl -X POST http://localhost:8000/api/news \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Test","content":"Test content"}'
+   ```
+
+2. **GitHub OAuth**:
+   - Перейти по `/api/auth/github`
+   - Авторизоваться через GitHub
+   - Получить токены в callback
+
+## 📈 Дополнительные улучшения
+
+1. **Кеширование**:
+   - Кеширование пользователей в Redis (TTL 10 мин)
+   - Кеширование новостей (TTL 5 мин)
+   - Инвалидация кеша при изменениях
+
+2. **Мониторинг**:
+   - Prometheus метрики (`/metrics`)
+   - Структурированное логгирование через structlog
+   - Интеграция с Hawk для мониторинга ошибок
+
+3. **Отказоустойчивость**:
+   - Повторные попытки в Celery задачах
+   - Health check эндпоинт (`/health`)
+   - Graceful shutdown
+
+Все требования технического задания выполнены, комментарии преподавателя учтены и исправлены. Код соответствует современным стандартам разработки на Python и FastAPI.
+
+
+
 
 # Новостной API (FastAPI)
 
